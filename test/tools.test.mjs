@@ -251,6 +251,36 @@ test('action=parse：只解析 sanitizer，不启动 mlir-opt、不解析工具�
   }
 });
 
+test('action=parse：sanitizer.reportPath 相对 cwd 解析（不是会话根）', async () => {
+  const session = makeSession('tools-parse-cwd');
+  try {
+    session.write('sub/report.log', readFileSync(ASAN_LOG, 'utf8'));
+    const cfg = mockConfig(session.root);
+    const mock = createMockRunner({});
+    const result = await runTriage({
+      action: 'parse',
+      cwd: 'sub',
+      sanitizer: { reportPath: 'report.log', maxFrames: 1 },
+    }, { config: cfg, runner: mock.run, sessionCwd: session.root });
+    assert.equal(result.ok, true);
+    assert.equal(result.status, 'parsed');
+    assert.equal(result.crash.sanitizer.source, 'report');
+    assert.equal(result.crash.sanitizer.kind, 'asan');
+    assert.equal(result.crash.sanitizer.reportPath, join(session.root, 'sub', 'report.log'));
+    assert.equal(mock.state.runs, 0);
+
+    const missing = await runTriage({
+      action: 'parse',
+      cwd: 'sub',
+      sanitizer: { reportPath: 'nope.log' },
+    }, { config: cfg, runner: mock.run, sessionCwd: session.root });
+    assert.equal(missing.ok, false);
+    assert.equal(missing.error.code, 'SANITIZER_NOT_FOUND');
+    assert.match(missing.error.message, /[\\/]sub[\\/]nope\.log$/);
+  } finally {
+    session.cleanup();
+  }
+});
 test('action=parse：缺 sanitizer 报 INVALID_ARGUMENT，解析不出报 SANITIZER_PARSE_FAILED', async () => {
   const session = makeSession('tools-parse-bad');
   try {

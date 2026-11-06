@@ -1,6 +1,6 @@
 {
   "name": "dsh-crash-triage",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "MLIR crash triage for DeepSeek Harness: crash_triage reproduces a crash, minimizes the IR with mlir-reduce, bisects the failing pass and writes a handoff report. Never throws ENOENT.",
   "type": "module",
   "main": "lib/index.js",

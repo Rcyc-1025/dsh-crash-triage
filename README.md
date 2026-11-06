@@ -29,7 +29,7 @@ No core dumps, no symbolization (sanitizer reports are supplied by the caller), 
 - `mlir-opt` (required) and `mlir-reduce` (minimization only); LLVM 23.1.4 is what this repo is verified against.
 - `node` for the reducer tester is resolved by the plugin itself.
 
-Without `mlir-reduce` the plugin still loads: `diagnose` skips minimization with a warning, `reduce` returns `TOOL_NOT_FOUND`.
+Without `mlir-reduce` the plugin still loads, but asking for minimization (the default) makes both `diagnose` and `reduce` return `TOOL_NOT_FOUND`; pass `reduce: { enabled: false }` to diagnose without it (reproduction + pass bisect still run).
 
 ## Install
 
@@ -122,7 +122,7 @@ Parse-stage crashes (e.g. very deep nesting) also crash @@mlir-reduce@@ itself b
 ## Tests
 
 ```bash
-npm test        # 42 unit tests, mock runner, no LLVM needed
+npm test        # 43 unit tests, mock runner, no LLVM needed
 npm run smoke   # real mlir-opt; prints SKIP and exits 0 when the binary is absent
 ```
 

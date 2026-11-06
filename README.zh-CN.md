@@ -32,7 +32,7 @@
 - LLVM/MLIR 的 `mlir-opt`（必需）与 `mlir-reduce`（缩减才需要）。开发与验收使用 LLVM 23.1.4。
 - 缩减需要 `node`：插件会自己找（DSH 运行时自带的 node 优先），不依赖宿主进程的 `process.execPath`。
 
-没有 `mlir-reduce` 时插件照常加载，`diagnose` 会跳过缩减并给出 warning，`reduce` 返回 `TOOL_NOT_FOUND`。
+没有 `mlir-reduce` 时插件照常加载，但请求缩减（默认）时 `diagnose` / `reduce` 都会返回 `TOOL_NOT_FOUND`；不需要缩减就传 `reduce: { enabled: false }`（复现与 pass 二分照常跑）。
 
 ## 安装
 
@@ -260,7 +260,7 @@ tester 子进程收到的 argv 是 `<node.exe> <tester.mjs> <test-arg…> <候�
 
 ```bash
 cd dsh-crash-triage
-npm test        # 42 个单测，全部用 mock runner，不需要 LLVM
+npm test        # 43 个单测，全部用 mock runner，不需要 LLVM
 npm run smoke   # 真实 mlir-opt 冒烟；找不到工具时打印 SKIP 并 exit 0
 ```
 
