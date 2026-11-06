@@ -14,7 +14,7 @@ One tool, `crash_triage`, four actions:
 | `diagnose` (default) | reproduce → minimize with `mlir-reduce` → bisect passes → write report |
 | `reduce` | IR minimization only |
 | `bisect` | find the first pass that crashes |
-| `parse` | reproduce + classify + parse a sanitizer report, no reduce/bisect |
+| `parse` | parse a sanitizer report only — no `mlir-opt`, no reproduce/reduce/bisect |
 
 The plugin never throws `ENOENT` at the model: missing tools, missing IR, out-of-workspace output dirs, timeouts and cancellation all come back as `ok:false` with a Chinese `hint` and a `stage`.
 
@@ -81,6 +81,12 @@ Key parameters: `action`, `irPath` (resolved against `cwd`), `stdin` (inline IR 
 { "irPath": "tests/crash.mlir", "sanitizer": { "mode": "asan", "reportPath": "logs/asan.txt" } }
 ```
 
+```json
+{ "action": "parse", "sanitizer": { "inline": "==1==ERROR: AddressSanitizer: heap-use-after-free ..." } }
+```
+
+`status` is one of `diagnosed` / `reduced` / `bisected` / `parsed` / `partial` / `failed`. `ok` is `true` only when every requested stage succeeded; in `diagnose` a failed reduction still lets pass bisect run, and the result comes back as `ok:false, status:"partial"` with the earlier stages kept. A single nested top-level pass yields `PASS_NESTED` the same way (`partial`, `bisect.attempted:false`).
+
 Success shape: `{ ok, status, action, input{ irPath, sha256, pipeline }, crash{ reproduced, stable, attempts, exitCode, kind, signature{ key }, sanitizer }, reducer{ attempted, ok, reductionPercent, outputPath }, bisect{ attempted, ok, failingPass, failingIndex, passingPrefix, evidence }, reproducer{ command, text }, artifacts{ workDir, reportPath, ... }, warnings, hints }`. Failures carry `error{ code, message, hint, stage }` and still write `result.json` / `report.md`.
 
 ## Artifacts
@@ -116,7 +122,7 @@ Parse-stage crashes (e.g. very deep nesting) also crash @@mlir-reduce@@ itself b
 ## Tests
 
 ```bash
-npm test        # 37 unit tests, mock runner, no LLVM needed
+npm test        # 42 unit tests, mock runner, no LLVM needed
 npm run smoke   # real mlir-opt; prints SKIP and exits 0 when the binary is absent
 ```
 

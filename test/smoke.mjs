@@ -78,7 +78,7 @@ function check(name, condition, detail) {
 
 try {
   // 1) 不崩的 IR：正常诊断，退回 NOT_A_CRASH 而不是抛异常
-  const verifier = await runTriage({ action: 'parse', irPath: join(ROOT, 'fixtures', 'not-crash', 'verifier-error.mlir') }, { config, runner: localRunner, sessionCwd: session });
+  const verifier = await runTriage({ action: 'diagnose', reduce: { enabled: false }, bisect: { enabled: false }, irPath: join(ROOT, 'fixtures', 'not-crash', 'verifier-error.mlir') }, { config, runner: localRunner, sessionCwd: session });
   check('verifier-error 判定 NOT_A_CRASH（不抛异常）', verifier.ok === false && verifier.error !== undefined && verifier.error.code === 'NOT_A_CRASH', verifier.error === undefined ? '' : JSON.stringify(verifier.error));
   check('失败也写出 baseline 日志与 result.json', verifier.artifacts !== undefined
     && typeof verifier.artifacts.workDir === 'string'
@@ -87,7 +87,7 @@ try {
   check('verifier 诊断能带出来', verifier.crash !== undefined && String(verifier.crash.stderrExcerpt).includes('func.return'), verifier.crash === undefined ? '' : verifier.crash.stderrExcerpt);
 
   // 2) 600 层嵌套：合法但很深，也不崩
-  const deep = await runTriage({ action: 'parse', irPath: join(ROOT, 'fixtures', 'not-crash', 'deep-600.mlir') }, { config, runner: localRunner, sessionCwd: session });
+  const deep = await runTriage({ action: 'diagnose', reduce: { enabled: false }, bisect: { enabled: false }, irPath: join(ROOT, 'fixtures', 'not-crash', 'deep-600.mlir') }, { config, runner: localRunner, sessionCwd: session });
   check('deep-600 不崩', deep.ok === false && deep.error !== undefined && deep.error.code === 'NOT_A_CRASH', deep.error === undefined ? '' : JSON.stringify(deep.error));
 
   // 3) 真实崩溃：4000 层嵌套让 mlir-opt 解析期栈溢出
@@ -107,9 +107,10 @@ try {
   check('写出 result.json / report.md / reproducer.txt', workDir !== null && existsSync(join(workDir, 'result.json')) && existsSync(join(workDir, 'report.md')) && existsSync(join(workDir, 'reproducer.txt')));
   check('复现命令带工作目录里的 input.mlir', crash.reproducer !== undefined && String(crash.reproducer.text).includes('input.mlir'), crash.reproducer === undefined ? '' : crash.reproducer.text);
 
-  // 4) action=parse 也能直接看崩溃
-  const parsed = await runTriage({ action: 'parse', irPath: join(ROOT, 'fixtures', 'crash', 'access-violation.mlir') }, { config, runner: localRunner, sessionCwd: session });
-  check('parse 崩溃 IR → ok:true 且 reproduced', parsed.ok === true && parsed.crash !== undefined && parsed.crash.reproduced === true, parsed.error === undefined ? '' : JSON.stringify(parsed.error));
+  // 4) action=parse：只解析 sanitizer 报告，不启动 mlir-opt
+  const parsed = await runTriage({ action: 'parse', sanitizer: { inline: readFileSync(join(ROOT, 'fixtures', 'crash', 'asan-uaf.log'), 'utf8') } }, { config, runner: localRunner, sessionCwd: session });
+  check('parse 只解析 sanitizer → ok:true / status=parsed', parsed.ok === true && parsed.status === 'parsed', parsed.error === undefined ? '' : JSON.stringify(parsed.error));
+  check('parse 解析出 asan 栈', parsed.crash !== undefined && parsed.crash.kind === 'asan' && parsed.crash.sanitizer !== undefined && parsed.crash.sanitizer.frames.length > 0, parsed.crash === undefined ? '' : String(parsed.crash.kind));
 } finally {
   if (process.env.CRASH_TRIAGE_KEEP_SMOKE === '1') console.log('保留现场：' + session);
   else rmSync(session, { recursive: true, force: true });

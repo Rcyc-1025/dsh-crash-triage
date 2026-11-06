@@ -14,7 +14,7 @@
 | `diagnose`（默认） | 复现崩溃 → 缩减 IR → 二分 pass → 写报告，一条龙 | 「这条 IR 为什么崩？」 |
 | `reduce` | 只做 IR 最小化（mlir-reduce + 签名守着） | 「帮我压到最小复现」 |
 | `bisect` | 只做 pass 二分，找出第一个崩的 pass | 「哪个 pass 崩的？」 |
-| `parse` | 只复现 + 分类 + 解析 sanitizer，不缩不二分 | 「它到底崩没崩？」 |
+| `parse` | 只解析 sanitizer 报告：不启动 `mlir-opt`，不复现、不缩减、不二分 | 「这份 ASan 日志说了什么？」 |
 
 插件绝不把 `ENOENT` 抛给模型：工具缺失、IR 不存在、输出目录越界、超时、取消，全部返回 `ok:false` + 中文 `hint` + `stage`。
 
@@ -143,20 +143,28 @@ dsh plugin --profile desktop remove dsh-crash-triage
 }
 ```
 
-内联 IR（不用先落盘）：
+只解析 sanitizer 报告（不启动 mlir-opt）：
 
 ```json
-{ "action": "parse", "irPath": "inline.mlir", "stdin": "module { func.func @f() { return } }" }
+{ "action": "parse", "sanitizer": { "inline": "==1==ERROR: AddressSanitizer: heap-use-after-free ..." } }
+```
+
+内联 IR（不用先落盘，默认 diagnose）：
+
+```json
+{ "stdin": "module { func.func @f() { return } }" }
 ```
 
 ### 返回
+
+`status` 取值 `diagnosed` / `reduced` / `bisected` / `parsed` / `partial` / `failed`；`ok` 只在**所有请求阶段都成功**时为 `true`。`diagnose` 里缩减失败不会阻断后续二分：结果返回 `ok:false` + `status:"partial"`，并保留已经拿到的复现/缩减结果；唯一顶层 pass 内部嵌套时同样走 `PASS_NESTED` + `partial`（`bisect.attempted:false`）。
 
 成功时（节选）：
 
 ```json
 {
   "ok": true,
-  "status": "ok",
+  "status": "diagnosed",
   "crash": {
     "reproduced": true,
     "stable": true,
@@ -252,7 +260,7 @@ tester 子进程收到的 argv 是 `<node.exe> <tester.mjs> <test-arg…> <候�
 
 ```bash
 cd dsh-crash-triage
-npm test        # 37 个单测，全部用 mock runner，不需要 LLVM
+npm test        # 42 个单测，全部用 mock runner，不需要 LLVM
 npm run smoke   # 真实 mlir-opt 冒烟；找不到工具时打印 SKIP 并 exit 0
 ```
 
