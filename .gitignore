@@ -1,0 +1,6 @@
+.crash-triage/
+.spike/
+test/.tmp/
+node_modules/
+*.log
+!fixtures/**/*.log

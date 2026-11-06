@@ -1,0 +1,24 @@
+# dsh-crash-triage 安装补丁：把 crash-triage 插件行插入 profile。
+#
+# 插件只注册一个工具 crash_triage：对一个 MLIR 输入复现崩溃、用 mlir-reduce 缩小 IR、
+# 二分出出错的 pass，并写出可转交的 report.md / result.json。
+#
+# 工具路径解析顺序：
+#   ① 本文件 config 里的 mlirOptPath / mlirReducePath（显式覆盖）
+#   ② toolchainJson 指向的 toolchain.json，或自动发现 <cwd>/mlir-lang/toolchain.json、<cwd>/toolchain.json
+#   ③ PATH 上的 mlir-opt / mlir-reduce
+# 缺工具时插件照常加载：工具在 execute 里返回 ok:false + 中文 hint，不会让宿主启动失败。
+#
+# 也可以在自己的 profile 补丁里按同 id 覆盖：
+#   - id: crash-triage
+#     name: 'dsh-crash-triage'
+#     config:
+#       mlirOptPath: D:\Code\llvm-build\bin\mlir-opt.exe   # 单引号内反斜杠不转义
+#       mlirReducePath: D:\Code\llvm-build\bin\mlir-reduce.exe
+#       keepWorkDir: false            # 默认 true：保留 .crash-triage/<run> 产物
+- insert:
+    - id: crash-triage
+      name: 'dsh-crash-triage'
+      config:
+        timeoutMs: 120000
+        maxOutputBytes: 1048576

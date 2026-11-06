@@ -1,0 +1,16 @@
+==12345==ERROR: AddressSanitizer: heap-use-after-free on address 0x602000000010 at pc 0x000001234567 bp 0x7ffd1234 sp 0x7ffd1200
+READ of size 4 at 0x602000000010 thread T0
+    #0 0x1234567 in mlir::detail::OperationName::getNamespace() const /src/llvm-project/mlir/lib/IR/OperationSupport.cpp:412:9
+    #1 0x1234999 in (anonymous namespace)::Canonicalizer::simplifyRegions() /src/llvm-project/mlir/lib/Transforms/Canonicalizer.cpp:210:5
+    #2 0x1235abc in mlir::canonicalize(mlir::Operation*) /src/llvm-project/mlir/lib/Transforms/Canonicalizer.cpp:389:3
+    #3 0x1236def in (anonymous namespace)::PassWrapper<mlir::detail::Pass<mlir::ModuleOp>>::runOnOperation() /src/llvm-project/mlir/lib/Pass/Pass.cpp:88:1
+    #4 0x7fffdeadbeef in main /src/llvm-project/mlir/tools/mlir-opt/mlir-opt.cpp:120:1
+
+0x602000000010 is located 16 bytes inside of 24-byte region [0x602000000000,0x602000000018)
+freed by thread T0 here:
+    #0 0x7f0011223 in operator delete(void*) /src/llvm-project/compiler-rt/lib/asan/asan_new_delete.cpp:102:3
+    #1 0x1234000 in mlir::detail::OpPrintingFlags::~OpPrintingFlags() /src/llvm-project/mlir/lib/IR/AsmPrinter.cpp:55:1
+
+SUMMARY: AddressSanitizer: heap-use-after-free /src/llvm-project/mlir/lib/IR/OperationSupport.cpp:412:9 in mlir::detail::OperationName::getNamespace() const
+Shadow bytes around the buggy address:
+  0x0c047fff7fa0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00

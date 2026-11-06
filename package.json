@@ -1,0 +1,52 @@
+{
+  "name": "dsh-crash-triage",
+  "version": "0.1.0",
+  "description": "MLIR crash triage for DeepSeek Harness: crash_triage reproduces a crash, minimizes the IR with mlir-reduce, bisects the failing pass and writes a handoff report. Never throws ENOENT.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0",
+    "dsh": ">=0.2.1-rc.5 <0.3.0-0"
+  },
+  "scripts": {
+    "test": "node --test --test-isolation=none test/classify.test.mjs test/sanitize.test.mjs test/bisect.test.mjs test/reduce.test.mjs test/tools.test.mjs",
+    "smoke": "node test/smoke.mjs"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "dsh-plugin",
+    "mlir",
+    "llvm",
+    "crash",
+    "triage",
+    "reducer"
+  ],
+  "author": "Rcyc-1025",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rcyc-1025/dsh-crash-triage.git"
+  },
+  "homepage": "https://github.com/Rcyc-1025/dsh-crash-triage#readme",
+  "bugs": {
+    "url": "https://github.com/Rcyc-1025/dsh-crash-triage/issues"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

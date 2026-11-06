@@ -1,0 +1,4 @@
+/src/llvm-project/mlir/lib/IR/OperationSupport.cpp:412:31: runtime error: signed integer overflow: 2147483647 + 1 cannot be represented in type 'int'
+    #0 0x1234567 in mlir::detail::OperationName::getNamespace() const /src/llvm-project/mlir/lib/IR/OperationSupport.cpp:412:31
+    #1 0x1234999 in mlir::canonicalize(mlir::Operation*) /src/llvm-project/mlir/lib/Transforms/Canonicalizer.cpp:389:3
+SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior /src/llvm-project/mlir/lib/IR/OperationSupport.cpp:412:31 in
